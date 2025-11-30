@@ -1,10 +1,11 @@
-import { Link, useLoaderData, redirect, useRevalidator, useSearchParams } from "react-router";
+import { Link, useLoaderData, redirect, useRevalidator } from "react-router";
 import { createClient } from "redis";
 import { SINT, PIET } from "./constants";
 import type { Route } from "./+types/success";
 import { useEffect } from "react";
+import { getSession } from "../clients/sessions.server";
 
-export async function loader({}: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const redis = await createClient({ url: process.env.REDIS_URL }).connect();
   
   const sintFound = await redis.get(SINT);
@@ -12,22 +13,23 @@ export async function loader({}: Route.LoaderArgs) {
   
   await redis.disconnect();
 
+  const session = await getSession(request.headers.get("Cookie"));
+  const name = session.get("name") || "Agent";
+
   if (!sintFound && !pietFound) {
     return redirect("/");
   }
 
   if (sintFound && pietFound) {
-    return { status: "complete" as const };
+    return { status: "complete" as const, name };
   }
 
-  return { status: "partial" as const };
+  return { status: "partial" as const, name };
 }
 
 export default function Success() {
-  const { status } = useLoaderData<typeof loader>();
+  const { status, name } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
-  const [searchParams] = useSearchParams();
-  const name = searchParams.get("name") || "Agent";
 
   useEffect(() => {
     if (revalidator.state === "idle" && status === "partial") {
