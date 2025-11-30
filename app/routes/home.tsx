@@ -1,15 +1,19 @@
-import { Form, useActionData, redirect } from "react-router";
+import { Form, useActionData, redirect, useSearchParams } from "react-router";
 import type { Route } from "./+types/home";
 import { useEffect, useState } from "react";
+import { createClient } from 'redis';
+import { SINT, PIET } from "./constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Sinterklaas Escape Room" },
+    { title: "Sinterklaas Secrets" },
     { name: "description", content: "Enter the secret code to proceed." },
   ];
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const redis = await createClient({ url: process.env.REDIS_URL }).connect();
+
   const formData = await request.formData();
   const code = formData.get("code");
 
@@ -18,8 +22,8 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const normalizedCode = code.trim().toUpperCase();
-
-  if (normalizedCode === "SINT" || normalizedCode === "PIET") {
+  if (normalizedCode === SINT || normalizedCode === PIET) {
+    await redis.set(normalizedCode, "true", { EX: 60 * 5 }); // Set key with a 5-minute TTL
     return redirect("/success");
   }
 
@@ -29,6 +33,9 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Home() {
   const actionData = useActionData<typeof action>();
   const [isBuzzing, setIsBuzzing] = useState(false);
+  const [searchParams, _] = useSearchParams()
+
+  const name = searchParams.get("name") || "Agent Piet"
 
   useEffect(() => {
     if (actionData?.error) {
@@ -61,10 +68,10 @@ export default function Home() {
               <span className="text-4xl">🕵️‍♂️</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-100 tracking-widest uppercase mb-2">
-              Top Secret Clearance
+              {`TOP GEHEIM: ALLEEN VOOR ${name.toUpperCase()}`}
             </h1>
             <p className="text-gray-500 text-sm">
-              OPERATION: <span className="text-yellow-500 font-bold">DECEMBER 5</span>
+              MISSIE: <span className="text-yellow-500 font-bold">DECEMBER 5</span>
             </p>
           </div>
 
@@ -72,7 +79,7 @@ export default function Home() {
           <Form method="post" className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="code" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Enter Access Code
+                Vul Toegangscode In
               </label>
               <input
                 type="text"
