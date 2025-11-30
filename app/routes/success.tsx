@@ -91,13 +91,7 @@ export default function Success() {
           </p>
         </div>
 
-        {/* Action Button */}
-        <Link 
-          to={`/?name=${name}`}
-          className={`inline-block px-10 py-5 text-xl ${status === "complete" ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-2 border-yellow-500 shadow-[0_0_30px_rgba(220,38,38,0.6)]" : "bg-yellow-600 hover:bg-yellow-500 hover:shadow-[0_0_20px_rgba(202,138,4,0.6)]"} text-white font-black rounded-full transition-all duration-300 hover:scale-110 hover:-rotate-1`}
-        >
-          TERUG NAAR BASIS
-        </Link>
+
       </div>
     </div>
   );
