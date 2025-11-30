@@ -22,9 +22,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const normalizedCode = code.trim().toUpperCase();
+  const name = formData.get("name");
+  
   if (normalizedCode === SINT || normalizedCode === PIET) {
     await redis.set(normalizedCode, "true", { EX: 60 * 5 }); // Set key with a 5-minute TTL
-    return redirect("/success");
+    const params = new URLSearchParams();
+    if (typeof name === "string") params.set("name", name);
+    return redirect(`/success?${params.toString()}`);
   }
 
   return { error: true, message: "ACCESS DENIED" };
@@ -77,6 +81,7 @@ export default function Home() {
 
           {/* Form */}
           <Form method="post" className="space-y-6">
+            <input type="hidden" name="name" value={name} />
             <div className="space-y-2">
               <label htmlFor="code" className="block text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Vul Toegangscode In

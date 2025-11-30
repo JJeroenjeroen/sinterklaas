@@ -1,4 +1,4 @@
-import { Link, useLoaderData, redirect, useRevalidator } from "react-router";
+import { Link, useLoaderData, redirect, useRevalidator, useSearchParams } from "react-router";
 import { createClient } from "redis";
 import { SINT, PIET } from "./constants";
 import type { Route } from "./+types/success";
@@ -25,7 +25,9 @@ export async function loader({}: Route.LoaderArgs) {
 
 export default function Success() {
   const { status } = useLoaderData<typeof loader>();
-  const revalidator = useRevalidator()
+  const revalidator = useRevalidator();
+  const [searchParams] = useSearchParams();
+  const name = searchParams.get("name") || "Agent";
 
   useEffect(() => {
     if (revalidator.state === "idle" && status === "partial") {
@@ -34,61 +36,67 @@ export default function Success() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-    
-  }, [revalidator.state])
+  }, [revalidator.state, status]);
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-green-900/20 via-gray-950 to-gray-950 pointer-events-none" />
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Dynamic Background Effects */}
+      <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${status === "complete" ? "from-red-900/40 via-gray-950 to-gray-950" : "from-yellow-900/20 via-gray-950 to-gray-950"} pointer-events-none transition-colors duration-1000`} />
       
-      {/* Confetti/Festive Elements (CSS based for simplicity) */}
+      {/* Enhanced Confetti/Festive Elements */}
       {status === "complete" && (
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+          {[...Array(50)].map((_, i) => (
             <div
               key={i}
-              className="absolute animate-bounce text-4xl opacity-50"
+              className="absolute animate-bounce text-5xl opacity-80 drop-shadow-lg"
               style={{
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${2 + Math.random() * 3}s`,
+                animationDuration: `${1.5 + Math.random() * 2}s`,
+                transform: `rotate(${Math.random() * 360}deg)`,
               }}
             >
-              {["🎁", "🍬", "🥕", "✨"][Math.floor(Math.random() * 4)]}
+              {["🎁", "🍬", "🥕", "✨", "🍫", "🍊", "📜"][Math.floor(Math.random() * 7)]}
             </div>
           ))}
         </div>
       )}
 
-      <div className="relative z-10 max-w-2xl w-full text-center space-y-8">
-        <div className="animate-pulse">
-          <span className="text-6xl">{status === "complete" ? "🔓" : "⏳"}</span>
+      <div className="relative z-10 max-w-4xl w-full text-center space-y-10">
+        {/* Animated Icon */}
+        <div className="animate-pulse mb-8">
+          <span className="text-8xl drop-shadow-[0_0_30px_rgba(255,215,0,0.5)]">
+            {status === "complete" ? "🔓" : "⏳"}
+          </span>
         </div>
         
-        <h1 className={`text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r ${status === "complete" ? "from-green-400 to-emerald-600 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" : "from-yellow-400 to-orange-600 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]"} tracking-tight`}>
-          {status === "complete" ? "MISSION ACCOMPLISHED" : "HALFWAY THERE"}
+        {/* Main Title */}
+        <h1 className={`text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r ${status === "complete" ? "from-red-500 via-yellow-400 to-red-500 animate-text" : "from-yellow-400 to-orange-600"} tracking-tight drop-shadow-[0_0_25px_rgba(255,0,0,0.5)]`}>
+          {status === "complete" ? "MISSIE GESLAAGD" : "WE ZIJN ER BIJNA!"}
         </h1>
         
-        <div className={`bg-gray-900/50 backdrop-blur-md border ${status === "complete" ? "border-green-500/30 shadow-[0_0_30px_rgba(16,185,129,0.1)]" : "border-yellow-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]"} rounded-2xl p-8`}>
-          <p className={`text-xl md:text-2xl ${status === "complete" ? "text-green-100" : "text-yellow-100"} font-mono mb-6`}>
+        {/* Message Box */}
+        <div className={`bg-gray-900/80 backdrop-blur-xl border-2 ${status === "complete" ? "border-yellow-500/50 shadow-[0_0_50px_rgba(234,179,8,0.2)]" : "border-yellow-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)]"} rounded-3xl p-10 transform transition-all hover:scale-105 duration-500`}>
+          <p className={`text-2xl md:text-4xl ${status === "complete" ? "text-yellow-100" : "text-yellow-100"} font-bold mb-6 leading-relaxed`}>
             {status === "complete" 
-              ? "ACCESS GRANTED. WELCOME, AGENT." 
-              : "ONE HALF OF THE PUZZLE IS SOLVED."}
+              ? `Sinterklaas heeft al zijn cadeau's kunnen bezorgen!` 
+              : "Nog even geduld..."}
           </p>
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-300 text-xl md:text-2xl font-medium">
             {status === "complete"
-              ? "Sinterklaas has successfully received your signal. The gifts are safe."
-              : "We need the other agent to complete its duties before the festivities are saved."}
+              ? <span>Bedankt agent <span className="text-yellow-400 font-bold underline decoration-wavy decoration-red-500">{name}</span>. Jullie hebben het feest gered!</span>
+              : "We wachten op de bevestiging van de andere agent. Blijf stand-by!"}
           </p>
         </div>
 
+        {/* Action Button */}
         <Link 
-          to="/"
-          className={`inline-block px-8 py-4 ${status === "complete" ? "bg-green-600 hover:bg-green-500 hover:shadow-[0_0_20px_rgba(22,163,74,0.6)]" : "bg-yellow-600 hover:bg-yellow-500 hover:shadow-[0_0_20px_rgba(202,138,4,0.6)]"} text-white font-bold rounded-full transition-all duration-300 hover:scale-105`}
+          to={`/?name=${name}`}
+          className={`inline-block px-10 py-5 text-xl ${status === "complete" ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-2 border-yellow-500 shadow-[0_0_30px_rgba(220,38,38,0.6)]" : "bg-yellow-600 hover:bg-yellow-500 hover:shadow-[0_0_20px_rgba(202,138,4,0.6)]"} text-white font-black rounded-full transition-all duration-300 hover:scale-110 hover:-rotate-1`}
         >
-          RETURN TO BASE
+          TERUG NAAR BASIS
         </Link>
       </div>
     </div>

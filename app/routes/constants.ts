@@ -1,4 +1,4 @@
-const SINT = "SINT";
-const PIET = "PIET";
+const SINT = "LIEK";
+const PIET = "PIEP";
 
 export { SINT, PIET };
