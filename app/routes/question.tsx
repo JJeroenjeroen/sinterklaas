@@ -1,7 +1,7 @@
 import { Form, useActionData, redirect, useLoaderData } from "react-router";
 import type { Route } from "./+types/question";
-import { getSession } from "../clients/sessions.server";
-import { LOCATION_LIST, ANSWERS } from "./constants";
+import { commitSession, getSession } from "../clients/sessions.server";
+import { LOCATION_LIST, ANSWERS, CORRECT_ANSWER_MESSAGES, CODEWORDS } from "./constants";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -17,14 +17,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
   
   const session = await getSession(request.headers.get("Cookie"));
-  const name = session.get("name") || "Agent";
-
-  return { questionId, name };
+  let name = session.get("name") || "Agent";
+  if (name.toUpperCase() !== "MARLIES" && name.toUpperCase() !== "ROAN") {
+    name = "ROAN";
+  }
+  const answeredList = session.get("answered") || [];
+  const correct = answeredList.includes(questionId);
+  const location = LOCATION_LIST[questionId];
+  
+  const message = correct ? CORRECT_ANSWER_MESSAGES[name][location] : "";
+  const codeLetter = CODEWORDS[name][questionId];
+  console.log(message)
+  return { questionId, name, correct, message, codeLetter };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
+    const formData = await request.formData();
   const answer = formData.get("answer");
+  if (!answer) {
+    return { correct: false, message: "NO ANSWER" };
+  }
   const questionId = parseInt(params.questionId);
   const session = await getSession(request.headers.get("Cookie"));
   let name = session.get("name");
@@ -33,24 +45,41 @@ export async function action({ request, params }: Route.ActionArgs) {
     // TODO: SHOW ERROR MESSAGE
     // return { error: true, message: "ACCESS DENIED" };
   }
-  const answers = ANSWERS[name.toUpperCase()];
-  const correctAnswer = answers[LOCATION_LIST[questionId]];
+  const answers = ANSWERS[name.toUpperCase() as keyof typeof ANSWERS];
+  const location = LOCATION_LIST[questionId] as keyof typeof answers;
+  const correctAnswer = answers[location].toString().toLowerCase();
 
-  if (answer != correctAnswer) {
+  if (answer.toString().toLowerCase() != correctAnswer) {
     return { correct: false, message: "WRONG ANSWER" };
   }
   else {
-    return { correct: true, message: "CORRECT ANSWER" };
+    // store the questionId in the Users session. The data should be an array with questionIds: [1, 2, 3]
+    const answered = session.get("answered") || [];
+    if (!answered.includes(questionId)) {
+      answered.push(questionId);
+      session.set("answered", answered);
+    }
+    const message = CORRECT_ANSWER_MESSAGES[name][location];
+    const codeLetter = CODEWORDS[name][questionId];
+
+    return { 
+      correct: true, 
+      message,
+      codeLetter,
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+     };
   }
 }
 
 export default function Question() {
-  const { questionId, name } = useLoaderData<typeof loader>();
+  const { questionId, name, correct, message, codeLetter } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const location = LOCATION_LIST[questionId];
 
   // Show celebration if correct
-  if (actionData?.correct) {
+  if (actionData?.correct || correct) {
     return (
       <div className="relative z-10 max-w-md w-full">
         <div className="bg-gray-900 border-2 border-green-500 shadow-[0_0_50px_rgba(34,197,94,0.5)] rounded-xl p-8">
@@ -60,8 +89,16 @@ export default function Question() {
               CORRECT!
             </h1>
             <p className="text-gray-400 text-sm">
-              {actionData.message}
+              {actionData?.message || message}
             </p>
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 border-2 border-green-500 text-white font-bold text-lg">
+                {questionId + 1}
+              </span>
+              <span className="text-8xl font-bold text-yellow-400 tracking-widest">
+                {actionData?.codeLetter || codeLetter}
+              </span>
+            </div>
           </div>
 
           <a

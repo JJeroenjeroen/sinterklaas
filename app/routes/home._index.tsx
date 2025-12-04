@@ -14,6 +14,7 @@ export function meta({}: Route.MetaArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
+  const answeredQuestions = session.get("answered") || [];
   const url = new URL(request.url);
   const nameParam = url.searchParams.get("name");
   let name = session.get("name");
@@ -22,7 +23,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     session.set("name", nameParam);
     name = nameParam;
     return data(
-      { name },
+      { name, answeredQuestions },
       {
         headers: {
           "Set-Cookie": await commitSession(session),
@@ -31,7 +32,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     );
   }
 
-  return { name };
+  return { name, answeredQuestions};
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -48,7 +49,7 @@ export async function action({ request }: Route.ActionArgs) {
   const name = formData.get("name");
   
   if (normalizedCode === SINT || normalizedCode === PIET) {
-    await redis.set(normalizedCode, "true", { EX: 60 * 5 }); // Set key with a 5-minute TTL
+    await redis.set(normalizedCode, "true", { EX: 60 * 60 * 2 }); // Set key with a 2-hr TTL
     const params = new URLSearchParams();
     if (typeof name === "string") params.set("name", name);
     return redirect(`/success?${params.toString()}`);
@@ -60,7 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function HomeIndex() {
   const actionData = useActionData<typeof action>();
   const [isBuzzing, setIsBuzzing] = useState(false);
-  const { name } = useLoaderData<typeof loader>();
+  const { name, answeredQuestions } = useLoaderData<typeof loader>();
 
   useEffect(() => {
     if (actionData?.error) {
@@ -90,18 +91,31 @@ export default function HomeIndex() {
 
         {/* Mysterious Buttons */}
         <div className="flex flex-col space-y-3 mb-8">
-          {LOCATION_LIST.map((num, i) => (
-            <a 
-              key={num}
-              href={`/${i}`}
-              className="group relative overflow-hidden bg-gray-950 border border-gray-800 hover:border-yellow-500/50 p-3 rounded-lg text-center transition-all duration-300 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <span className="text-gray-500 group-hover:text-yellow-400 font-mono text-sm tracking-[0.2em] transition-colors">
-                {`// ${num}`}
-              </span>
-            </a>
-          ))}
+          {LOCATION_LIST.map((num, i) => {
+            const isAnswered = answeredQuestions.includes(i);
+            return (
+              <a 
+                key={num}
+                href={`/${i}`}
+                className={`group relative overflow-hidden bg-gray-950 border p-3 rounded-lg text-center transition-all duration-300 ${
+                  isAnswered 
+                    ? 'border-green-500 hover:border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)] hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                    : 'border-gray-800 hover:border-yellow-500/50 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]'
+                }`}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-r from-transparent to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ${
+                  isAnswered ? 'via-green-500/10' : 'via-yellow-500/10'
+                }`} />
+                <span className={`font-mono text-sm tracking-[0.2em] transition-colors ${
+                  isAnswered 
+                    ? 'text-green-400 group-hover:text-green-300'
+                    : 'text-gray-500 group-hover:text-yellow-400'
+                }`}>
+                  {`// ${num}`}
+                </span>
+              </a>
+            );
+          })}
         </div>
 
         {/* Form */}
