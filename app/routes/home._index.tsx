@@ -85,7 +85,7 @@ export default function HomeIndex() {
             {`TOP GEHEIM: ALLEEN VOOR ${name?.toUpperCase() || 'UNKNOWN'}`}
           </h1>
           <p className="text-gray-500 text-sm">
-            MISSIE: <span className="text-yellow-500 font-bold">DECEMBER 5</span>
+            MISSIE: <span className="text-yellow-500 font-bold">DECEMBER 6</span>
           </p>
         </div>
 

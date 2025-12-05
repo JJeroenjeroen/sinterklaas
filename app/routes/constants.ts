@@ -1,5 +1,6 @@
-const SINT = "SINT";
-const PIET = "PIET";
+const SINT = "DANK";
+const PIET = "BAIE";
+
 const CODEWORDS =  {
     "ROAN": SINT,
     "MARLIES": PIET
@@ -16,7 +17,7 @@ const ANSWERS = {
         VLIEGTUIG: 16,
         PRETORIA: 'zuma',
         KRUGERPARK: 'sawubona',
-        KAAPSTAD: '12',
+        KAAPSTAD: 'slurp',
     }
 }
 
