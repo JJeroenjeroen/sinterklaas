@@ -11,7 +11,7 @@ const ANSWERS = {
         VLIEGTUIG: 8,
         PRETORIA: 3,
         KRUGERPARK: '3b8',
-        KAAPSTAD: 12,
+        KAAPSTAD: 'lekker wijntje hoor',
     },
     MARLIES: {
         VLIEGTUIG: 16,
