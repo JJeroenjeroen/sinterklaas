@@ -10,7 +10,7 @@ const ANSWERS = {
     ROAN: {
         VLIEGTUIG: 8,
         PRETORIA: 3,
-        KRUGERPARK: '3b8',
+        KRUGERPARK: 38,
         KAAPSTAD: 'lekker wijntje hoor',
     },
     MARLIES: {
